@@ -72,7 +72,7 @@ export default function DashboardPage() {
             </Typography>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Card sx={{ bgcolor: 'primary.main', color: 'white' }}>
                         <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Inventory fontSize="large" />
@@ -83,7 +83,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Card sx={{ bgcolor: stats.lowStockCount > 0 ? 'error.main' : 'success.main', color: 'white' }}>
                         <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Warning fontSize="large" />
@@ -94,7 +94,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Card sx={{ bgcolor: 'secondary.main', color: 'white' }}>
                         <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <TrendingUp fontSize="large" />
@@ -105,7 +105,7 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Card sx={{ bgcolor: 'info.main', color: 'white' }}>
                         <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Receipt fontSize="large" />
@@ -125,7 +125,7 @@ export default function DashboardPage() {
             )}
 
             <Grid container spacing={4}>
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom fontWeight="bold">Recent Sales</Typography>
                         <List>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
                         </List>
                     </Paper>
                 </Grid>
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                     <Paper sx={{ p: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
                         <Typography variant="h6" gutterBottom fontWeight="bold">Tax Integration (Tax1)</Typography>
                         <Typography variant="body2" sx={{ mb: 2 }}>

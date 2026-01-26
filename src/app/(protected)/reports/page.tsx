@@ -118,7 +118,7 @@ export default function ReportsPage() {
             <Typography variant="h4" fontWeight="bold" sx={{ mb: 4 }}>Reports & Analytics</Typography>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <Typography color="text.secondary" gutterBottom>Total Revenue</Typography>
                         <Typography variant="h3" fontWeight="bold" color="primary.main">
@@ -126,7 +126,7 @@ export default function ReportsPage() {
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <Typography color="text.secondary" gutterBottom>Total Items Sold</Typography>
                         <Typography variant="h3" fontWeight="bold" color="secondary.main">
@@ -137,7 +137,7 @@ export default function ReportsPage() {
             </Grid>
 
             <Grid container spacing={3}>
-                <Grid item xs={12} lg={8}>
+                <Grid size={{ xs: 12, lg: 8 }}>
                     <Paper sx={{ p: 3, height: 400 }}>
                         <Typography variant="h6" gutterBottom>Revenue Over Time</Typography>
                         <Line
@@ -150,7 +150,7 @@ export default function ReportsPage() {
                         />
                     </Paper>
                 </Grid>
-                <Grid item xs={12} lg={4}>
+                <Grid size={{ xs: 12, lg: 4 }}>
                     <Paper sx={{ p: 3, height: 400 }}>
                         <Typography variant="h6" gutterBottom>Top Selling Items</Typography>
                         <Bar

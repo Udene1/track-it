@@ -82,11 +82,13 @@ export async function GET(request: NextRequest) {
         doc.text(`N ${vatAmount.toLocaleString()}`, 480, doc.y, { align: 'right' });
         doc.moveDown();
 
-        doc.fontSize(14).text('Total Amount:', 400, doc.y, { bold: true });
-        doc.text(`N ${Number(sale.total_amount).toLocaleString()}`, 480, doc.y, { align: 'right', bold: true });
+        doc.fontSize(14).font('Helvetica-Bold').text('Total Amount:', 400, doc.y);
+        doc.font('Helvetica-Bold').text(`N ${Number(sale.total_amount).toLocaleString()}`, 480, doc.y, { align: 'right' });
+        doc.font('Helvetica'); // Reset to standard font
 
         doc.moveDown(3);
-        doc.fontSize(10).text('Thank you for your business!', { align: 'center', italic: true });
+        doc.fontSize(10).font('Helvetica-Oblique').text('Thank you for your business!', { align: 'center' });
+        doc.font('Helvetica'); // Reset font
         doc.text('Powered by Tax1 Inventory Tracker', { align: 'center' });
 
         doc.end();

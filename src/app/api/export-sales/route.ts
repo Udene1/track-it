@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const formattedData = sales.map(sale => ({
         date: sale.sale_date,
-        item: sale.items?.name,
+        item: (sale.items as any)?.name,
         quantity: sale.quantity_sold,
         revenue_inc_vat: sale.total_amount,
         revenue_ex_vat: Number(sale.total_amount) / 1.075,
