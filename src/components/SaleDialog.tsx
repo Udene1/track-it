@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -19,7 +20,8 @@ import { saleSchema, SaleFormValues } from '@/lib/validations';
 import { createClient } from '@/lib/supabase-client';
 import { formatCurrency, VAT_RATE } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import { useState, useEffect } from 'react';
+import BarcodeScanner from '@/components/BarcodeScanner';
+import { Scan as ScanIcon } from 'lucide-react';
 
 interface SaleDialogProps {
     open: boolean;
@@ -29,6 +31,7 @@ interface SaleDialogProps {
 
 export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps) {
     const [loading, setLoading] = useState(false);
+    const [scanning, setScanning] = useState(false);
     const [items, setItems] = useState<any[]>([]);
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const supabase = createClient();
@@ -57,6 +60,18 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
             customer_name: '',
         },
     });
+
+    const handleBarcodeDetected = (code: string) => {
+        const item = items.find(i => i.barcode === code);
+        if (item) {
+            setValue('item_id', item.id);
+            setSelectedItem(item);
+            setScanning(false);
+            toast.success(`Selected: ${item.name}`);
+        } else {
+            toast.error(`No item found with barcode: ${code}`);
+        }
+    };
 
     const quantitySold = useWatch({ control, name: 'quantity_sold' }) || 0;
     const subtotal = selectedItem ? selectedItem.price * quantitySold : 0;
@@ -102,22 +117,40 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
                 <DialogTitle>New Sale / Checkout</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                        <Autocomplete
-                            options={items}
-                            getOptionLabel={(option) => `${option.name} (${option.quantity} in stock)`}
-                            onChange={(_, value) => {
-                                setValue('item_id', value?.id || '');
-                                setSelectedItem(value);
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Select Item"
-                                    error={!!errors.item_id}
-                                    helperText={errors.item_id?.message}
-                                />
-                            )}
-                        />
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                            <Autocomplete
+                                fullWidth
+                                options={items}
+                                value={selectedItem}
+                                getOptionLabel={(option) => `${option.name} (${option.quantity} in stock)`}
+                                onChange={(_, value) => {
+                                    setValue('item_id', value?.id || '');
+                                    setSelectedItem(value);
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Select Item"
+                                        error={!!errors.item_id}
+                                        helperText={errors.item_id?.message}
+                                    />
+                                )}
+                            />
+                            <Button
+                                variant="outlined"
+                                onClick={() => setScanning(!scanning)}
+                                sx={{ height: 56, minWidth: 56 }}
+                            >
+                                <ScanIcon size={20} />
+                            </Button>
+                        </Box>
+
+                        {scanning && (
+                            <BarcodeScanner
+                                onDetected={handleBarcodeDetected}
+                                onClose={() => setScanning(false)}
+                            />
+                        )}
                         <TextField
                             label="Quantity Sold"
                             type="number"

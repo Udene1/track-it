@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -16,7 +17,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { itemSchema, ItemFormValues } from '@/lib/validations';
 import { createClient } from '@/lib/supabase-client';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import BarcodeScanner from '@/components/BarcodeScanner';
+import { Scan as ScanIcon } from 'lucide-react';
 
 interface ItemDialogProps {
     open: boolean;
@@ -27,11 +29,13 @@ interface ItemDialogProps {
 
 export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialogProps) {
     const [loading, setLoading] = useState(false);
+    const [scanning, setScanning] = useState(false);
     const supabase = createClient();
 
     const {
         register,
         handleSubmit,
+        setValue,
         formState: { errors },
         reset,
     } = useForm<ItemFormValues>({
@@ -40,12 +44,14 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
             name: item.name,
             description: item.description || '',
             price: Number(item.price),
+            barcode: item.barcode || '',
             category: item.category || '',
             quantity: item.quantity,
         } : {
             name: '',
             description: '',
             price: 0,
+            barcode: '',
             category: '',
             quantity: 0,
         },
@@ -100,6 +106,34 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
                             error={!!errors.name}
                             helperText={errors.name?.message}
                         />
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                            <TextField
+                                label="Barcode / SKU"
+                                fullWidth
+                                {...register('barcode')}
+                                error={!!errors.barcode}
+                                helperText={errors.barcode?.message}
+                            />
+                            <Button
+                                variant="outlined"
+                                onClick={() => setScanning(!scanning)}
+                                sx={{ height: 56, minWidth: 56 }}
+                            >
+                                <ScanIcon size={20} />
+                            </Button>
+                        </Box>
+
+                        {scanning && (
+                            <BarcodeScanner
+                                onDetected={(code) => {
+                                    setValue('barcode', code);
+                                    setScanning(false);
+                                    toast.success(`Barcode detected: ${code}`);
+                                }}
+                                onClose={() => setScanning(false)}
+                            />
+                        )}
+
                         <TextField
                             label="Category"
                             fullWidth

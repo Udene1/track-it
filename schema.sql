@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS items (
   description TEXT,
   quantity INTEGER DEFAULT 0,
   price DECIMAL(12, 2) DEFAULT 0.00,
+  barcode TEXT,
   category TEXT,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -121,3 +122,48 @@ BEGIN
 END $$;
 
 ALTER PUBLICATION supabase_realtime ADD TABLE items, sales, purchases;
+
+-- Audit Logging Function
+CREATE OR REPLACE FUNCTION audit_log_trigger_fn()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_user_id UUID;
+    v_action TEXT;
+    v_changes JSONB;
+BEGIN
+    v_action := TG_OP;
+    v_user_id := auth.uid();
+    
+    IF (TG_OP = 'INSERT') THEN
+        v_changes := to_jsonb(NEW);
+    ELSIF (TG_OP = 'UPDATE') THEN
+        v_changes := jsonb_build_object(
+            'old', to_jsonb(OLD),
+            'new', to_jsonb(NEW)
+        );
+    ELSIF (TG_OP = 'DELETE') THEN
+        v_changes := to_jsonb(OLD);
+    END IF;
+
+    INSERT INTO audit_logs (action, table_name, record_id, changed_by, changes)
+    VALUES (v_action, TG_TABLE_NAME, COALESCE(NEW.id, OLD.id), v_user_id, v_changes);
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Attach Audit Triggers
+DROP TRIGGER IF EXISTS audit_items_trigger ON items;
+CREATE TRIGGER audit_items_trigger
+AFTER INSERT OR UPDATE OR DELETE ON items
+FOR EACH ROW EXECUTE PROCEDURE audit_log_trigger_fn();
+
+DROP TRIGGER IF EXISTS audit_sales_trigger ON sales;
+CREATE TRIGGER audit_sales_trigger
+AFTER INSERT OR UPDATE OR DELETE ON sales
+FOR EACH ROW EXECUTE PROCEDURE audit_log_trigger_fn();
+
+DROP TRIGGER IF EXISTS audit_purchases_trigger ON purchases;
+CREATE TRIGGER audit_purchases_trigger
+AFTER INSERT OR UPDATE OR DELETE ON purchases
+FOR EACH ROW EXECUTE PROCEDURE audit_log_trigger_fn();
