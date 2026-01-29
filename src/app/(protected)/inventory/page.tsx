@@ -22,7 +22,7 @@ import {
     Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { createClient } from '@/lib/supabase-client';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatStock } from '@/lib/utils';
 import ItemDialog from '@/components/ItemDialog';
 import toast from 'react-hot-toast';
 
@@ -90,15 +90,21 @@ export default function InventoryPage() {
         {
             field: 'quantity',
             headerName: 'Stock',
-            width: 100,
+            width: 250,
             renderCell: (params) => (
                 <Typography
-                    color={params.value < 10 ? 'error' : 'inherit'}
-                    fontWeight={params.value < 10 ? 'bold' : 'normal'}
+                    color={params.row.quantity < 10 ? 'error' : 'inherit'}
+                    fontWeight={params.row.quantity < 10 ? 'bold' : 'normal'}
                 >
-                    {params.value}
+                    {formatStock(params.row.quantity, params.row.packaging_unit, params.row.units_per_package, params.row.base_unit)}
                 </Typography>
             )
+        },
+        {
+            field: 'weighted_avg_cost',
+            headerName: 'Avg Cost',
+            width: 120,
+            valueFormatter: (value) => formatCurrency(Number(value))
         },
         {
             field: 'price',

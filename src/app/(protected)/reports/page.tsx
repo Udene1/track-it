@@ -112,25 +112,45 @@ export default function ReportsPage() {
 
     const totalRevenue = salesData.reduce((sum, sale) => sum + Number(sale.total_amount), 0);
     const totalItemsSold = salesData.reduce((sum, sale) => sum + sale.quantity_sold, 0);
+    const totalCOGS = salesData.reduce((sum, sale) => sum + (Number(sale.cost_at_sale || 0) * Number(sale.quantity_sold)), 0);
+    const grossProfit = totalRevenue - totalCOGS;
+    const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    const inventoryValue = itemsData.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.weighted_avg_cost || 0)), 0);
 
     return (
         <Box>
             <Typography variant="h4" fontWeight="bold" sx={{ mb: 4 }}>Reports & Analytics</Typography>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, md: 3 }}>
                     <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <Typography color="text.secondary" gutterBottom>Total Revenue</Typography>
-                        <Typography variant="h3" fontWeight="bold" color="primary.main">
+                        <Typography variant="h4" fontWeight="bold" color="primary.main">
                             {formatCurrency(totalRevenue)}
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, md: 3 }}>
                     <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Typography color="text.secondary" gutterBottom>Total Items Sold</Typography>
-                        <Typography variant="h3" fontWeight="bold" color="secondary.main">
-                            {totalItemsSold}
+                        <Typography color="text.secondary" gutterBottom>Gross Profit</Typography>
+                        <Typography variant="h4" fontWeight="bold" color="success.main">
+                            {formatCurrency(grossProfit)}
+                        </Typography>
+                    </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                    <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Typography color="text.secondary" gutterBottom>Gross Margin %</Typography>
+                        <Typography variant="h4" fontWeight="bold" color="warning.main">
+                            {grossMargin.toFixed(1)}%
+                        </Typography>
+                    </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                    <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Typography color="text.secondary" gutterBottom>Inventory Value</Typography>
+                        <Typography variant="h4" fontWeight="bold" color="info.main">
+                            {formatCurrency(inventoryValue)}
                         </Typography>
                     </Paper>
                 </Grid>

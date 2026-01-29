@@ -43,6 +43,7 @@ const menuItems = [
     { text: 'Sales', icon: <SalesIcon />, path: '/sales' },
     { text: 'Purchases', icon: <PurchasesIcon />, path: '/purchases' },
     { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -47,6 +47,9 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
             barcode: item.barcode || '',
             category: item.category || '',
             quantity: item.quantity,
+            base_unit: item.base_unit || 'Piece',
+            packaging_unit: item.packaging_unit || '',
+            units_per_package: item.units_per_package || 1,
         } : {
             name: '',
             description: '',
@@ -54,6 +57,9 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
             barcode: '',
             category: '',
             quantity: 0,
+            base_unit: 'Piece',
+            packaging_unit: '',
+            units_per_package: 1,
         },
     });
 
@@ -140,6 +146,32 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
                             {...register('category')}
                             error={!!errors.category}
                             helperText={errors.category?.message}
+                        />
+
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <TextField
+                                label="Base Unit (e.g. Bottle, Piece)"
+                                fullWidth
+                                {...register('base_unit')}
+                                error={!!errors.base_unit}
+                                helperText={errors.base_unit?.message}
+                            />
+                            <TextField
+                                label="Pkg Unit (e.g. Crate, Carton)"
+                                fullWidth
+                                {...register('packaging_unit')}
+                                error={!!errors.packaging_unit}
+                                helperText={errors.packaging_unit?.message}
+                            />
+                        </Box>
+
+                        <TextField
+                            label="Units per Package (Conversion Factor)"
+                            type="number"
+                            fullWidth
+                            {...register('units_per_package', { valueAsNumber: true })}
+                            error={!!errors.units_per_package}
+                            helperText={errors.units_per_package?.message || "How many base units are in one package?"}
                         />
                         <TextField
                             label="Price (₦)"

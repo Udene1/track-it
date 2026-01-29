@@ -12,13 +12,17 @@ import {
     CircularProgress,
     Autocomplete,
     Typography,
-    Divider
+    Divider,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { saleSchema, SaleFormValues } from '@/lib/validations';
 import { createClient } from '@/lib/supabase-client';
-import { formatCurrency, VAT_RATE } from '@/lib/utils';
+import { formatCurrency, formatStock, VAT_RATE } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import BarcodeScanner from '@/components/BarcodeScanner';
 import { Scan as ScanIcon } from 'lucide-react';
@@ -57,6 +61,8 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
         resolver: zodResolver(saleSchema),
         defaultValues: {
             quantity_sold: 1,
+            unit_type: 'base',
+            unit_quantity: 1,
             customer_name: '',
         },
     });
@@ -72,6 +78,17 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
             toast.error(`No item found with barcode: ${code}`);
         }
     };
+
+    const unitType = useWatch({ control, name: 'unit_type' });
+    const unitQuantity = useWatch({ control, name: 'unit_quantity' }) || 0;
+
+    // Synchronize quantity_sold
+    useEffect(() => {
+        if (selectedItem) {
+            const conversionFactor = unitType === 'package' ? (selectedItem.units_per_package || 1) : 1;
+            setValue('quantity_sold', unitQuantity * conversionFactor);
+        }
+    }, [unitType, unitQuantity, selectedItem, setValue]);
 
     const quantitySold = useWatch({ control, name: 'quantity_sold' }) || 0;
     const subtotal = selectedItem ? selectedItem.price * quantitySold : 0;
@@ -89,11 +106,40 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
+            // 1. Get user valuation preference
+            const { data: settings } = await supabase
+                .from('settings')
+                .select('valuation_method')
+                .eq('user_id', user.id)
+                .single();
+
+            const activeMethod = settings?.valuation_method || 'FIFO';
+
+            // 2. Consume batches and calculate COGS (needed for both methods to keep batches synced)
+            const { data: totalCost, error: cogsError } = await supabase.rpc('consume_stock_batches', {
+                p_item_id: values.item_id,
+                p_quantity_to_sell: values.quantity_sold,
+                p_user_id: user.id
+            });
+
+            if (cogsError) throw cogsError;
+
+            // 3. Determine the cost to log based on active method
+            const costAtSale = activeMethod === 'FIFO'
+                ? (Number(totalCost) / values.quantity_sold)
+                : (Number(selectedItem.weighted_avg_cost) || 0);
+
             const { error } = await supabase
                 .from('sales')
                 .insert([{
-                    ...values,
+                    item_id: values.item_id,
+                    quantity_sold: values.quantity_sold,
+                    unit_type: values.unit_type,
+                    unit_quantity: values.unit_quantity,
+                    customer_name: values.customer_name,
                     total_amount: total,
+                    cost_at_sale: costAtSale,
+                    valuation_method_used: activeMethod,
                     user_id: user.id,
                 }]);
 
@@ -132,7 +178,7 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
                                         {...params}
                                         label="Select Item"
                                         error={!!errors.item_id}
-                                        helperText={errors.item_id?.message}
+                                        helperText={errors.item_id?.message || (selectedItem && `In stock: ${formatStock(selectedItem.quantity, selectedItem.packaging_unit, selectedItem.units_per_package, selectedItem.base_unit)}`)}
                                     />
                                 )}
                             />
@@ -145,20 +191,43 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
                             </Button>
                         </Box>
 
+                        {selectedItem && (
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Unit</InputLabel>
+                                    <Select
+                                        {...register('unit_type')}
+                                        defaultValue="base"
+                                        label="Unit"
+                                    >
+                                        <MenuItem value="base">{selectedItem.base_unit || 'Pieces'}</MenuItem>
+                                        {selectedItem.packaging_unit && (
+                                            <MenuItem value="package">{selectedItem.packaging_unit}</MenuItem>
+                                        )}
+                                    </Select>
+                                </FormControl>
+                                <TextField
+                                    label="Quantity"
+                                    type="number"
+                                    fullWidth
+                                    {...register('unit_quantity', { valueAsNumber: true })}
+                                    error={!!errors.unit_quantity}
+                                    helperText={errors.unit_quantity?.message}
+                                />
+                            </Box>
+                        )}
+
                         {scanning && (
                             <BarcodeScanner
                                 onDetected={handleBarcodeDetected}
                                 onClose={() => setScanning(false)}
                             />
                         )}
-                        <TextField
-                            label="Quantity Sold"
-                            type="number"
-                            fullWidth
-                            {...register('quantity_sold', { valueAsNumber: true })}
-                            error={!!errors.quantity_sold}
-                            helperText={errors.quantity_sold?.message}
-                        />
+                        {selectedItem && (
+                            <Typography variant="body2" color="text.secondary">
+                                Total: {quantitySold} {selectedItem.base_unit || 'Pieces'}
+                            </Typography>
+                        )}
                         <TextField
                             label="Customer Name"
                             fullWidth
