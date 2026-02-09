@@ -22,6 +22,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [valuationMethod, setValuationMethod] = useState<'FIFO' | 'WAC'>('FIFO');
+    const [barcodeEnabled, setBarcodeEnabled] = useState<boolean>(true);
     const supabase = createClient();
 
     useEffect(() => {
@@ -32,7 +33,7 @@ export default function SettingsPage() {
 
             const { data, error } = await supabase
                 .from('settings')
-                .select('valuation_method')
+                .select('valuation_method, barcode_enabled')
                 .eq('user_id', user.id)
                 .single();
 
@@ -40,6 +41,7 @@ export default function SettingsPage() {
                 toast.error('Failed to load settings');
             } else if (data) {
                 setValuationMethod(data.valuation_method as 'FIFO' | 'WAC');
+                setBarcodeEnabled(data.barcode_enabled ?? true);
             }
             setLoading(false);
         };
@@ -56,7 +58,8 @@ export default function SettingsPage() {
                 .from('settings')
                 .upsert({
                     user_id: user.id,
-                    valuation_method: valuationMethod
+                    valuation_method: valuationMethod,
+                    barcode_enabled: barcodeEnabled
                 });
 
             if (error) throw error;
@@ -138,6 +141,33 @@ export default function SettingsPage() {
                         {saving ? <CircularProgress size={24} /> : 'Save Changes'}
                     </Button>
                 </Box>
+
+                <Divider sx={{ my: 4 }} />
+
+                <Typography variant="h6" gutterBottom>Feature Settings</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Enable or disable specific features based on your workflow needs.
+                </Typography>
+
+                <FormControl component="fieldset">
+                    <FormLabel component="legend" sx={{ mb: 1, fontWeight: 'bold' }}>Barcodes</FormLabel>
+                    <FormControlLabel
+                        control={
+                            <RadioGroup
+                                row
+                                value={barcodeEnabled ? 'enabled' : 'disabled'}
+                                onChange={(e) => setBarcodeEnabled(e.target.value === 'enabled')}
+                            >
+                                <FormControlLabel value="enabled" control={<Radio />} label="Enabled" />
+                                <FormControlLabel value="disabled" control={<Radio />} label="Disabled" />
+                            </RadioGroup>
+                        }
+                        label=""
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                        When disabled, barcode scanning fields and buttons will be hidden across the app.
+                    </Typography>
+                </FormControl>
             </Paper>
         </Box>
     );

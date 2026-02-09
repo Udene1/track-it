@@ -38,6 +38,7 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
     const [scanning, setScanning] = useState(false);
     const [items, setItems] = useState<any[]>([]);
     const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [barcodeEnabled, setBarcodeEnabled] = useState(true);
     const supabase = createClient();
 
     useEffect(() => {
@@ -46,9 +47,26 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
                 const { data } = await supabase.from('items').select('*').order('name');
                 setItems(data || []);
             };
+
+            const fetchSettings = async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data } = await supabase
+                    .from('settings')
+                    .select('barcode_enabled')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (data) {
+                    setBarcodeEnabled(data.barcode_enabled ?? true);
+                }
+            };
+
             fetchItems();
+            fetchSettings();
         }
-    }, [open]);
+    }, [open, supabase]);
 
     const {
         register,
@@ -182,13 +200,15 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
                                     />
                                 )}
                             />
-                            <Button
-                                variant="outlined"
-                                onClick={() => setScanning(!scanning)}
-                                sx={{ height: 56, minWidth: 56 }}
-                            >
-                                <ScanIcon size={20} />
-                            </Button>
+                            {barcodeEnabled && (
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => setScanning(!scanning)}
+                                    sx={{ height: 56, minWidth: 56 }}
+                                >
+                                    <ScanIcon size={20} />
+                                </Button>
+                            )}
                         </Box>
 
                         {selectedItem && (

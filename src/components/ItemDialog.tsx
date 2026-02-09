@@ -30,6 +30,7 @@ interface ItemDialogProps {
 export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialogProps) {
     const [loading, setLoading] = useState(false);
     const [scanning, setScanning] = useState(false);
+    const [barcodeEnabled, setBarcodeEnabled] = useState(true);
     const supabase = createClient();
 
     const {
@@ -62,6 +63,26 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
             units_per_package: 1,
         },
     });
+
+    useEffect(() => {
+        if (open) {
+            const fetchSettings = async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data } = await supabase
+                    .from('settings')
+                    .select('barcode_enabled')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (data) {
+                    setBarcodeEnabled(data.barcode_enabled ?? true);
+                }
+            };
+            fetchSettings();
+        }
+    }, [open, supabase]);
 
     const onSubmit = async (values: ItemFormValues) => {
         setLoading(true);
@@ -112,22 +133,24 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
                             error={!!errors.name}
                             helperText={errors.name?.message}
                         />
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                            <TextField
-                                label="Barcode / SKU"
-                                fullWidth
-                                {...register('barcode')}
-                                error={!!errors.barcode}
-                                helperText={errors.barcode?.message}
-                            />
-                            <Button
-                                variant="outlined"
-                                onClick={() => setScanning(!scanning)}
-                                sx={{ height: 56, minWidth: 56 }}
-                            >
-                                <ScanIcon size={20} />
-                            </Button>
-                        </Box>
+                        {barcodeEnabled && (
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                                <TextField
+                                    label="Barcode / SKU"
+                                    fullWidth
+                                    {...register('barcode')}
+                                    error={!!errors.barcode}
+                                    helperText={errors.barcode?.message}
+                                />
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => setScanning(!scanning)}
+                                    sx={{ height: 56, minWidth: 56 }}
+                                >
+                                    <ScanIcon size={20} />
+                                </Button>
+                            </Box>
+                        )}
 
                         {scanning && (
                             <BarcodeScanner
