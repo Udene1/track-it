@@ -90,11 +90,16 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
+            const payload: any = { ...values };
+            if (!barcodeEnabled) {
+                delete payload.barcode;
+            }
+
             if (item) {
                 const { error } = await supabase
                     .from('items')
                     .update({
-                        ...values,
+                        ...payload,
                         updated_at: new Date().toISOString(),
                     })
                     .eq('id', item.id);
@@ -104,7 +109,7 @@ export default function ItemDialog({ open, onClose, item, onSuccess }: ItemDialo
                 const { error } = await supabase
                     .from('items')
                     .insert([{
-                        ...values,
+                        ...payload,
                         user_id: user.id,
                     }]);
                 if (error) throw error;
