@@ -13,7 +13,8 @@ import {
     Button,
     CircularProgress,
     Divider,
-    Alert
+    Alert,
+    TextField
 } from '@mui/material';
 import { createClient } from '@/lib/supabase-client';
 import toast from 'react-hot-toast';
@@ -23,6 +24,8 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [valuationMethod, setValuationMethod] = useState<'FIFO' | 'WAC'>('FIFO');
     const [barcodeEnabled, setBarcodeEnabled] = useState<boolean>(true);
+    const [vatEnabled, setVatEnabled] = useState<boolean>(true);
+    const [externalUserId, setExternalUserId] = useState<string>('');
     const supabase = createClient();
 
     useEffect(() => {
@@ -33,7 +36,7 @@ export default function SettingsPage() {
 
             const { data, error } = await supabase
                 .from('settings')
-                .select('valuation_method, barcode_enabled')
+                .select('valuation_method, barcode_enabled, vat_enabled, external_user_id')
                 .eq('user_id', user.id)
                 .single();
 
@@ -42,6 +45,8 @@ export default function SettingsPage() {
             } else if (data) {
                 setValuationMethod(data.valuation_method as 'FIFO' | 'WAC');
                 setBarcodeEnabled(data.barcode_enabled ?? true);
+                setVatEnabled(data.vat_enabled ?? true);
+                setExternalUserId(data.external_user_id || '');
             }
             setLoading(false);
         };
@@ -59,7 +64,9 @@ export default function SettingsPage() {
                 .upsert({
                     user_id: user.id,
                     valuation_method: valuationMethod,
-                    barcode_enabled: barcodeEnabled
+                    barcode_enabled: barcodeEnabled,
+                    vat_enabled: vatEnabled,
+                    external_user_id: externalUserId || null
                 });
 
             if (error) throw error;
@@ -168,6 +175,43 @@ export default function SettingsPage() {
                         When disabled, barcode scanning fields and buttons will be hidden across the app.
                     </Typography>
                 </FormControl>
+                <Divider sx={{ my: 4 }} />
+                <Typography variant="h6" gutterBottom>Tax Compliance</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Configure how VAT is applied to your sales.
+                </Typography>
+                <FormControl component="fieldset">
+                    <FormLabel component="legend" sx={{ mb: 1, fontWeight: 'bold' }}>VAT (Value Added Tax)</FormLabel>
+                    <RadioGroup
+                        row
+                        value={vatEnabled ? 'enabled' : 'disabled'}
+                        onChange={(e) => setVatEnabled(e.target.value === 'enabled')}
+                    >
+                        <FormControlLabel value="enabled" control={<Radio />} label="Enabled (7.5%)" />
+                        <FormControlLabel value="disabled" control={<Radio />} label="Disabled" />
+                    </RadioGroup>
+                    <Typography variant="caption" color="text.secondary">
+                        When enabled, a mandatory 7.5% VAT will be added to all sales.
+                        Small businesses with turnover below the threshold may choose to disable this.
+                    </Typography>
+                </FormControl>
+                <Divider sx={{ my: 4 }} />
+
+                <Typography variant="h6" gutterBottom>External Integration</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Connect your account to external services like NEntreOS Nexus.
+                </Typography>
+
+                <Box sx={{ maxWidth: 400 }}>
+                    <TextField
+                        fullWidth
+                        label="Nexus External ID"
+                        value={externalUserId}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExternalUserId(e.target.value)}
+                        placeholder="e.g. nexus_user_123"
+                        helperText="Provide this ID to link your inventory with the NEntreOS terminal."
+                    />
+                </Box>
             </Paper>
         </Box>
     );

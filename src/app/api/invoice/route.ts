@@ -76,7 +76,8 @@ export async function GET(request: NextRequest) {
             // Item Row
             const itemPrice = Number(item.price) || 0;
             const subtotal = itemPrice * (sale.quantity_sold || 0);
-            const vatAmount = subtotal * VAT_RATE;
+            const vatAmount = Number(sale.vat_amount || 0);
+            const vatRate = (Number(sale.vat_rate || 0) * 100).toFixed(1);
 
             doc.text(item.name || 'Unknown Item', 50, doc.y, { width: 300 });
             doc.text((sale.quantity_sold || 0).toString(), 350, doc.y);
@@ -91,9 +92,11 @@ export async function GET(request: NextRequest) {
             doc.text(`N ${subtotal.toLocaleString()}`, 480, doc.y, { align: 'right' });
             doc.moveDown();
 
-            doc.text('VAT (7.5%):', 400, doc.y);
-            doc.text(`N ${vatAmount.toLocaleString()}`, 480, doc.y, { align: 'right' });
-            doc.moveDown();
+            if (vatAmount > 0) {
+                doc.text(`VAT (${vatRate}%):`, 400, doc.y);
+                doc.text(`N ${vatAmount.toLocaleString()}`, 480, doc.y, { align: 'right' });
+                doc.moveDown();
+            }
 
             doc.fontSize(14).font('Helvetica-Bold').text('Total Amount:', 400, doc.y);
             doc.font('Helvetica-Bold').text(`N ${Number(sale.total_amount || 0).toLocaleString()}`, 480, doc.y, { align: 'right' });

@@ -39,6 +39,7 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
     const [items, setItems] = useState<any[]>([]);
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const [barcodeEnabled, setBarcodeEnabled] = useState(true);
+    const [vatEnabled, setVatEnabled] = useState(true);
     const supabase = createClient();
 
     useEffect(() => {
@@ -54,12 +55,13 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
 
                 const { data } = await supabase
                     .from('settings')
-                    .select('barcode_enabled')
+                    .select('barcode_enabled, vat_enabled')
                     .eq('user_id', user.id)
                     .single();
-
+ 
                 if (data) {
                     setBarcodeEnabled(data.barcode_enabled ?? true);
+                    setVatEnabled(data.vat_enabled ?? true);
                 }
             };
 
@@ -110,7 +112,7 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
 
     const quantitySold = useWatch({ control, name: 'quantity_sold' }) || 0;
     const subtotal = selectedItem ? selectedItem.price * quantitySold : 0;
-    const vat = subtotal * VAT_RATE;
+    const vat = vatEnabled ? subtotal * VAT_RATE : 0;
     const total = subtotal + vat;
 
     const onSubmit = async (values: SaleFormValues) => {
@@ -142,10 +144,12 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
 
             if (cogsError) throw cogsError;
 
-            // 3. Determine the cost to log based on active method
-            const costAtSale = activeMethod === 'FIFO'
-                ? (Number(totalCost) / values.quantity_sold)
-                : (Number(selectedItem.weighted_avg_cost) || 0);
+            // 3. Calculate both valuation methods
+            const fifo_cost = Number(totalCost) / values.quantity_sold;
+            const wac_cost = Number(selectedItem.weighted_avg_cost) || 0;
+
+            // Primary cost based on active method
+            const costAtSale = activeMethod === 'FIFO' ? fifo_cost : wac_cost;
 
             const { error } = await supabase
                 .from('sales')
@@ -156,6 +160,10 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
                     unit_quantity: values.unit_quantity,
                     customer_name: values.customer_name,
                     total_amount: total,
+                    vat_rate: vatEnabled ? VAT_RATE : 0,
+                    vat_amount: vat,
+                    fifo_cost: fifo_cost,
+                    wac_cost: wac_cost,
                     cost_at_sale: costAtSale,
                     valuation_method_used: activeMethod,
                     user_id: user.id,
@@ -264,7 +272,7 @@ export default function SaleDialog({ open, onClose, onSuccess }: SaleDialogProps
                                 <Typography fontWeight="medium">{formatCurrency(subtotal)}</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                <Typography>VAT (7.5%):</Typography>
+                                <Typography>VAT ({vatEnabled ? '7.5%' : '0%'}):</Typography>
                                 <Typography fontWeight="medium">{formatCurrency(vat)}</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

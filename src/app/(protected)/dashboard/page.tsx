@@ -157,7 +157,7 @@ export default function DashboardPage() {
                     <Paper sx={{ p: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
                         <Typography variant="h6" gutterBottom fontWeight="bold">Tax Integration (Tax1)</Typography>
                         <Typography variant="body2" sx={{ mb: 2 }}>
-                            This app is ready for integration with @tax1nigeria. Your sales data is calculated with the mandatory 7.5% VAT for compliant reporting.
+                            This app is ready for integration with @tax1nigeria. You can enable or disable the 7.5% VAT in settings to match your business size and compliance needs.
                         </Typography>
                         <Button variant="contained" color="secondary" fullWidth sx={{ fontWeight: 'bold' }}>
                             Export for Tax Return

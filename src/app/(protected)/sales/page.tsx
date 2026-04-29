@@ -63,7 +63,7 @@ export default function SalesPage() {
         { field: 'quantity_sold', headerName: 'Qty', width: 100 },
         {
             field: 'total_amount',
-            headerName: 'Total (inc VAT)',
+            headerName: 'Total Amount',
             width: 150,
             valueFormatter: (value) => formatCurrency(Number(value))
         },

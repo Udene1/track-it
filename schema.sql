@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS sales (
   unit_type TEXT DEFAULT 'base', -- 'base' or 'package'
   unit_quantity INTEGER, -- Quantity in selected unit
   total_amount DECIMAL(12, 2) NOT NULL,
+  vat_rate DECIMAL(5, 4) DEFAULT 0.075, -- Rate at time of sale
+  vat_amount DECIMAL(12, 2) DEFAULT 0.00, -- Amount of VAT included
   cost_at_sale DECIMAL(12, 2) DEFAULT 0.00, -- COGS per base unit at time of sale
   valuation_method_used TEXT DEFAULT 'FIFO', -- 'FIFO' or 'WAC'
   sale_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -77,6 +79,7 @@ CREATE TABLE IF NOT EXISTS stock_batches (
 CREATE TABLE IF NOT EXISTS settings (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   valuation_method TEXT DEFAULT 'FIFO' CHECK (valuation_method IN ('FIFO', 'WAC')),
+  vat_enabled BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
